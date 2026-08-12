@@ -12,13 +12,13 @@ import { fetchCatalog } from "@/lib/content/catalog.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ApexLectures — Free Lectures, Notes & Batches" },
+      { title: "PW-MARCO — Free Lectures, Notes & Batches" },
       {
         name: "description",
         content:
-          "ApexLectures, powered by MARCO. Browse batches, subjects, topics and stream lectures on any device.",
+          "PW-MARCO, powered by MARCO. Browse batches, subjects, topics and stream lectures on any device.",
       },
-      { property: "og:title", content: "ApexLectures — Free Lectures, Notes & Batches" },
+      { property: "og:title", content: "PW-MARCO — Free Lectures, Notes & Batches" },
       {
         property: "og:description",
         content: "Browse batches, subjects, topics and stream lectures on any device.",
@@ -49,7 +49,7 @@ function Index() {
       <section className="rounded-3xl border border-border bg-card p-6 text-center sm:p-10">
         <img
           src={LOGO_URL}
-          alt="ApexLectures"
+          alt="PW-MARCO"
           className="mx-auto h-16 w-16 object-contain sm:h-20 sm:w-20"
           width={80}
           height={80}
@@ -58,7 +58,7 @@ function Index() {
           Every lecture. One clean place to study.
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">
-          ApexLectures brings batches, subjects, topics, lectures and notes together — fast on
+          PW-MARCO brings batches, subjects, topics, lectures and notes together — fast on
           mobile, free to browse.
         </p>
 

@@ -17,13 +17,13 @@ export const Route = createFileRoute("/batches")({
   }),
   head: () => ({
     meta: [
-      { title: "Browse Batches — ApexLectures" },
+      { title: "Browse Batches — PW-MARCO" },
       {
         name: "description",
         content:
-          "Search and browse every available ApexLectures batch, with subjects, topics and lectures.",
+          "Search and browse every available PW-MARCO batch, with subjects, topics and lectures.",
       },
-      { property: "og:title", content: "Browse Batches — ApexLectures" },
+      { property: "og:title", content: "Browse Batches — PW-MARCO" },
       {
         property: "og:description",
         content: "Search thousands of study batches and jump straight into lectures.",

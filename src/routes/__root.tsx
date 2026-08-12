@@ -79,14 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ApexLectures — Powered by MARCO" },
+      { title: "PW-MARCO — Lectures, Notes & Batches" },
       {
         name: "description",
         content:
-          "ApexLectures, powered by MARCO — browse batches, subjects, topics and lectures on any device.",
+          "PW-MARCO — powered by MARCO — browse batches, subjects, topics and lectures on any device.",
       },
-      { name: "author", content: "ApexLectures" },
-      { property: "og:title", content: "ApexLectures — Powered by MARCO" },
+      { name: "author", content: "PW-MARCO" },
+      { property: "og:title", content: "PW-MARCO — Lectures, Notes & Batches" },
       {
         property: "og:description",
         content: "Browse batches, subjects, topics and lectures on any device.",
@@ -105,7 +105,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: LOGO_URL, type: "image/png" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -159,7 +159,7 @@ function RootComponent() {
         </main>
 
         <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-          <p className="font-semibold">ApexLectures — Powered by MARCO</p>
+          <p className="font-semibold">PW-MARCO — Lectures, Notes & Batches</p>
           <p className="mt-1">Content is served from the connected authorized source.</p>
         </footer>
 

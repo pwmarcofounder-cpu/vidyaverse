@@ -1,0 +1,4 @@
+# Cloudflare settings for the deployed SSR worker.
+# nodejs_compat is required, otherwise the site returns an error page on Cloudflare.
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
