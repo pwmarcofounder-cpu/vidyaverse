@@ -11,6 +11,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Wordmark, LOGO_URL, TELEGRAM_URL } from "../components/apex/branding";
+import { TelegramPopup } from "../components/apex/TelegramPopup";
 
 function NotFoundComponent() {
   return (
@@ -77,21 +79,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "ApexLectures — Powered by MARCO" },
+      {
+        name: "description",
+        content:
+          "ApexLectures, powered by MARCO — browse batches, subjects, topics and lectures on any device.",
+      },
+      { name: "author", content: "ApexLectures" },
+      { property: "og:title", content: "ApexLectures — Powered by MARCO" },
+      {
+        property: "og:description",
+        content: "Browse batches, subjects, topics and lectures on any device.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: LOGO_URL, type: "image/png" },
     ],
   }),
   shellComponent: RootShell,
@@ -119,8 +133,38 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div className="flex min-h-screen flex-col">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
+            <Wordmark />
+            <nav className="flex items-center gap-3 text-sm font-semibold">
+              <Link to="/batches" className="text-muted-foreground hover:text-foreground">
+                Batches
+              </Link>
+              <a
+                href={TELEGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+              >
+                Telegram
+              </a>
+            </nav>
+          </div>
+        </header>
+
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <main className="flex-1">
+          <Outlet />
+        </main>
+
+        <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
+          <p className="font-semibold">ApexLectures — Powered by MARCO</p>
+          <p className="mt-1">Content is served from the connected authorized source.</p>
+        </footer>
+
+        <TelegramPopup />
+      </div>
     </QueryClientProvider>
   );
 }
