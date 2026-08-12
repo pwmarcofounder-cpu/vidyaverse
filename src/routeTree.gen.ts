@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BatchesRouteImport } from './routes/batches'
 import { Route as BatchBatchIdRouteImport } from './routes/batch.$batchId'
 import { Route as ApiContentSplatRouteImport } from './routes/api/content/$'
+import { Route as BatchBatchIdSubjectSlugRouteImport } from './routes/batch.$batchId.$subjectSlug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,38 +35,62 @@ const ApiContentSplatRoute = ApiContentSplatRouteImport.update({
   path: '/api/content/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BatchBatchIdSubjectSlugRoute = BatchBatchIdSubjectSlugRouteImport.update({
+  id: '/$subjectSlug',
+  path: '/$subjectSlug',
+  getParentRoute: () => BatchBatchIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
-  '/batch/$batchId': typeof BatchBatchIdRoute
+  '/batch/$batchId': typeof BatchBatchIdRouteWithChildren
   '/api/content/$': typeof ApiContentSplatRoute
+  '/batch/$batchId/$subjectSlug': typeof BatchBatchIdSubjectSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
-  '/batch/$batchId': typeof BatchBatchIdRoute
+  '/batch/$batchId': typeof BatchBatchIdRouteWithChildren
   '/api/content/$': typeof ApiContentSplatRoute
+  '/batch/$batchId/$subjectSlug': typeof BatchBatchIdSubjectSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/batches': typeof BatchesRoute
-  '/batch/$batchId': typeof BatchBatchIdRoute
+  '/batch/$batchId': typeof BatchBatchIdRouteWithChildren
   '/api/content/$': typeof ApiContentSplatRoute
+  '/batch/$batchId/$subjectSlug': typeof BatchBatchIdSubjectSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/batches' | '/batch/$batchId' | '/api/content/$'
+  fullPaths:
+    | '/'
+    | '/batches'
+    | '/batch/$batchId'
+    | '/api/content/$'
+    | '/batch/$batchId/$subjectSlug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/batches' | '/batch/$batchId' | '/api/content/$'
-  id: '__root__' | '/' | '/batches' | '/batch/$batchId' | '/api/content/$'
+  to:
+    | '/'
+    | '/batches'
+    | '/batch/$batchId'
+    | '/api/content/$'
+    | '/batch/$batchId/$subjectSlug'
+  id:
+    | '__root__'
+    | '/'
+    | '/batches'
+    | '/batch/$batchId'
+    | '/api/content/$'
+    | '/batch/$batchId/$subjectSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BatchesRoute: typeof BatchesRoute
-  BatchBatchIdRoute: typeof BatchBatchIdRoute
+  BatchBatchIdRoute: typeof BatchBatchIdRouteWithChildren
   ApiContentSplatRoute: typeof ApiContentSplatRoute
 }
 
@@ -99,13 +124,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContentSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/batch/$batchId/$subjectSlug': {
+      id: '/batch/$batchId/$subjectSlug'
+      path: '/$subjectSlug'
+      fullPath: '/batch/$batchId/$subjectSlug'
+      preLoaderRoute: typeof BatchBatchIdSubjectSlugRouteImport
+      parentRoute: typeof BatchBatchIdRoute
+    }
   }
 }
+
+interface BatchBatchIdRouteChildren {
+  BatchBatchIdSubjectSlugRoute: typeof BatchBatchIdSubjectSlugRoute
+}
+
+const BatchBatchIdRouteChildren: BatchBatchIdRouteChildren = {
+  BatchBatchIdSubjectSlugRoute: BatchBatchIdSubjectSlugRoute,
+}
+
+const BatchBatchIdRouteWithChildren = BatchBatchIdRoute._addFileChildren(
+  BatchBatchIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BatchesRoute: BatchesRoute,
-  BatchBatchIdRoute: BatchBatchIdRoute,
+  BatchBatchIdRoute: BatchBatchIdRouteWithChildren,
   ApiContentSplatRoute: ApiContentSplatRoute,
 }
 export const routeTree = rootRouteImport
