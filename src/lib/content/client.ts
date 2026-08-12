@@ -61,6 +61,7 @@ export type BatchDetails = {
   name: string;
   slug: string;
   byName?: string;
+  programId?: string;
   language?: string;
   class?: string;
   previewImage?: ImageRef;
@@ -85,17 +86,38 @@ export type ContentItem = {
   topic?: string;
   url?: string;
   urlType?: string;
-  videoDetails?: { image?: string; name?: string; duration?: string; videoUrl?: string };
+  videoDetails?: {
+    _id?: string;
+    id?: string;
+    image?: string;
+    name?: string;
+    duration?: string;
+    videoUrl?: string;
+    hls_url?: string;
+    embedCode?: string;
+  };
   startTime?: string;
   date?: string;
   isFree?: boolean;
   lectureType?: string;
   tags?: { _id: string; name: string }[];
-  homeworkIds?: {
-    _id: string;
-    topic?: string;
-    attachmentIds?: { _id: string; name?: string; baseUrl?: string; key?: string }[];
-  }[];
+  homeworkIds?: Homework[];
+  exerciseIds?: Homework[];
+};
+
+export type Attachment = { _id: string; name?: string; baseUrl?: string; key?: string };
+
+export type Homework = {
+  _id: string;
+  topic?: string;
+  note?: string;
+  attachmentIds?: Attachment[];
+};
+
+/** Full detail for a single schedule item — the only place attachment keys are populated. */
+export type ScheduleDetails = ContentItem & {
+  batchSubjectId?: string;
+  isDPPNotes?: boolean;
 };
 
 export function imageUrl(ref: ImageRef | undefined, fallback?: string | null): string | null {
