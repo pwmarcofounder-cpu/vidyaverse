@@ -1,4 +1,3 @@
-<<<<<<< keep
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Inbox } from "lucide-react";
 
@@ -67,4 +66,3 @@ export function EmptyState({ message }: { message: string }) {
     </div>
   );
 }
-=======
