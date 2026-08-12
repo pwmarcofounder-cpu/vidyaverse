@@ -7,7 +7,7 @@ import { batchDetailsQuery, topicsQuery } from "@/lib/content/client";
 
 type SubjectSearch = { title?: string | undefined };
 
-export const Route = createFileRoute("/batch/$batchId/$subjectSlug")({
+export const Route = createFileRoute("/batch/$batchId/$subjectSlug/")({
   validateSearch: (search: Record<string, unknown>): SubjectSearch => ({
     title: typeof search["title"] === "string" ? search["title"] : undefined,
   }),
