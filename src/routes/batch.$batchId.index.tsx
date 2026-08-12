@@ -8,12 +8,12 @@ import { batchDetailsQuery, imageUrl } from "@/lib/content/client";
 export const Route = createFileRoute("/batch/$batchId/")({
   head: () => ({
     meta: [
-      { title: "Batch — ApexLectures" },
+      { title: "Batch — PW-MARCO" },
       {
         name: "description",
-        content: "Subjects, topics and lectures for this ApexLectures batch.",
+        content: "Subjects, topics and lectures for this PW-MARCO batch.",
       },
-      { property: "og:title", content: "Batch — ApexLectures" },
+      { property: "og:title", content: "Batch — PW-MARCO" },
       {
         property: "og:description",
         content: "Open subjects, topics and lectures for this batch.",
