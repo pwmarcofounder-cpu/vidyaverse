@@ -12,4 +12,13 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    cloudflare: {
+      // Cloudflare needs Node compatibility for the SSR worker, otherwise the
+      // deployed site fails to render on the first request.
+      wrangler: {
+        compatibility_flags: ["nodejs_compat"],
+      },
+    },
+  },
 });
