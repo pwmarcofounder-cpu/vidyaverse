@@ -79,14 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PW-MARCO — Lectures, Notes &amp; Batches" },
+      { title: "PW-MARCO — Lectures, Notes & Batches" },
       {
         name: "description",
         content:
           "PW-MARCO — powered by MARCO — browse batches, subjects, topics and lectures on any device.",
       },
       { name: "author", content: "PW-MARCO" },
-      { property: "og:title", content: "PW-MARCO — Lectures, Notes &amp; Batches" },
+      { property: "og:title", content: "PW-MARCO — Lectures, Notes & Batches" },
       {
         property: "og:description",
         content: "Browse batches, subjects, topics and lectures on any device.",
@@ -159,7 +159,7 @@ function RootComponent() {
         </main>
 
         <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-          <p className="font-semibold">PW-MARCO — Lectures, Notes &amp; Batches</p>
+          <p className="font-semibold">PW-MARCO — Lectures, Notes & Batches</p>
           <p className="mt-1">Content is served from the connected authorized source.</p>
         </footer>
 
