@@ -5,7 +5,7 @@ import { BookOpen, ChevronRight, Clock } from "lucide-react";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/apex/states";
 import { batchDetailsQuery, imageUrl } from "@/lib/content/client";
 
-export const Route = createFileRoute("/batch/$batchId")({
+export const Route = createFileRoute("/batch/$batchId/")({
   head: () => ({
     meta: [
       { title: "Batch — ApexLectures" },
