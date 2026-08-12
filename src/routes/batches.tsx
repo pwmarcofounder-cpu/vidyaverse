@@ -8,7 +8,7 @@ import { BatchCard } from "@/components/apex/BatchCard";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/apex/states";
 import { fetchCatalog } from "@/lib/content/catalog.functions";
 
-type BatchSearch = { q?: string; page?: number };
+type BatchSearch = { q?: string | undefined; page?: number | undefined };
 
 export const Route = createFileRoute("/batches")({
   validateSearch: (search: Record<string, unknown>): BatchSearch => ({
