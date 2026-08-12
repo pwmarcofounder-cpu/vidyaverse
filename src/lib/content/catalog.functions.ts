@@ -12,7 +12,11 @@ export const fetchCatalog = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { queryCatalog } = await import("./catalog.server");
     try {
-      return await queryCatalog(data);
+      return await queryCatalog({
+        q: data.q ?? "",
+        page: data.page ?? 1,
+        pageSize: data.pageSize ?? 24,
+      });
     } catch {
       return {
         items: [],
