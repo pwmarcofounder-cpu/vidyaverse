@@ -23,6 +23,16 @@ export const Route = createFileRoute("/batch/$batchId/")({
   component: BatchPage,
 });
 
+function plainText(html?: string) {
+  if (!html) return "";
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function BatchPage() {
   const { batchId } = Route.useParams();
   const query = useQuery(batchDetailsQuery(batchId));
@@ -63,8 +73,10 @@ function BatchPage() {
                   </span>
                 ) : null}
               </div>
-              {batch.shortDescription ? (
-                <p className="mt-3 text-sm text-muted-foreground">{batch.shortDescription}</p>
+              {plainText(batch.shortDescription) ? (
+                <p className="mt-3 line-clamp-4 text-sm text-muted-foreground">
+                  {plainText(batch.shortDescription)}
+                </p>
               ) : null}
             </div>
           </div>
