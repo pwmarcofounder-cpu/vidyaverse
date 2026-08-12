@@ -6,6 +6,10 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Cloudflare Pages builds set CF_PAGES; that target needs the Pages layout
+// (dist/_worker.js + static assets in dist), not the standalone worker layout.
+const isCloudflarePages = process.env["CF_PAGES"] === "1" || !!process.env["CF_PAGES_BRANCH"];
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -13,6 +17,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   nitro: {
+    ...(isCloudflarePages ? { preset: "cloudflare_pages", output: { dir: "dist" } } : {}),
     cloudflare: {
       // Cloudflare needs Node compatibility for the SSR worker, otherwise the
       // deployed site fails to render on the first request.
