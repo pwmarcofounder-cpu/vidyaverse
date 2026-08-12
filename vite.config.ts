@@ -16,9 +16,7 @@ export default defineConfig({
     cloudflare: {
       // Cloudflare needs Node compatibility for the SSR worker, otherwise the
       // deployed site fails to render on the first request.
-      wrangler: {
-        compatibility_flags: ["nodejs_compat"],
-      },
+      nodeCompat: true,
     },
   },
 });
