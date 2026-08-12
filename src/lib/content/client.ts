@@ -156,30 +156,58 @@ export const contentsQuery = (
   staleTime: 2 * 60 * 1000,
 });
 
+export const scheduleDetailsQuery = (batchSlug: string, subjectSlug: string, scheduleId: string) => ({
+  queryKey: ["schedule-details", batchSlug, subjectSlug, scheduleId],
+  queryFn: () =>
+    contentGet<ScheduleDetails>(
+      `v1/batches/${batchSlug}/subject/${subjectSlug}/schedule/${scheduleId}/schedule-details`,
+    ),
+  staleTime: 5 * 60 * 1000,
+});
+
+/** Resolves an attachment to its absolute file URL, or null when the source has none. */
+export function attachmentUrl(a: Attachment | undefined | null): string | null {
+  if (!a?.baseUrl || !a?.key) return null;
+  const base = a.baseUrl.endsWith("/") ? a.baseUrl : `${a.baseUrl}/`;
+  const key = a.key.replace(/^\/+/, "");
+  return `${base}${key}`;
+}
+
 /* ------------------------------------------------------------- playback */
 
 /**
- * Rebuilds the source's own playback URL with the original parameters.
- * The media stream itself is never touched or re-encoded.
+ * Rebuilds the source's own playback URL, preserving every parameter the
+ * source data provides. The media stream itself is never touched.
+ *
+ * `subjectId` MUST be the batch-subject id (subject._id from batch details),
+ * not the subject slug — the source player rejects the slug.
  */
 export function buildPlayUrl(input: {
   batchId: string;
+  programId?: string | undefined;
   subjectId: string;
   topicId: string;
   item: ContentItem;
-  typeId?: string;
   playType?: "Lecture" | "solutions";
 }) {
   const { batchId, subjectId, topicId, item } = input;
   const urlType = (item.urlType ?? "").toLowerCase();
   const isYoutube = urlType === "youtube";
+
+  const typeId = item.videoDetails?._id ?? item.videoDetails?.id ?? "";
+  const videoUrl = isYoutube
+    ? (item.url ?? item.videoDetails?.embedCode ?? "")
+    : (item.videoDetails?.videoUrl ?? item.videoDetails?.hls_url ?? item.url ?? "");
+
   const params = new URLSearchParams();
   params.set("batch_id", batchId);
+  // program_id is preserved even when the source has it empty.
+  params.set("program_id", input.programId ?? "");
   params.set("subject_id", subjectId);
   params.set("topic_id", topicId);
   params.set("video_id", item._id);
-  if (input.typeId) params.set("typeId", input.typeId);
-  if (isYoutube && item.url) params.set("video_url", item.url);
+  params.set("typeId", typeId);
+  params.set("video_url", videoUrl);
   params.set("video_name", item.topic ?? item.videoDetails?.name ?? "");
   params.set("video_img", item.videoDetails?.image ?? "");
   params.set("video_type", isYoutube ? "youtube" : "new");
