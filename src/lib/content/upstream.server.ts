@@ -57,22 +57,60 @@ export type UpstreamResult = {
   contentType: string;
 };
 
+/** Primary (open) mirror of the content source — no token required. */
+const PRIMARY_PREFIX = "https://proxy.streamvideo.co.in/fetch/api.penpencil.co";
+
+const BROWSER_HEADERS = {
+  Accept: "application/json",
+  "User-Agent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36",
+};
+
+function looksHealthy(status: number, body: string) {
+  if (status < 200 || status >= 300) return false;
+  try {
+    const json = JSON.parse(body) as { success?: boolean };
+    return json?.success !== false;
+  } catch {
+    return false;
+  }
+}
+
+async function tryPrimary(clean: string, search: string): Promise<UpstreamResult | null> {
+  try {
+    const res = await fetch(`${PRIMARY_PREFIX}/${clean}${search ?? ""}`, {
+      method: "GET",
+      headers: BROWSER_HEADERS,
+    });
+    const body = await res.text();
+    if (!looksHealthy(res.status, body)) return null;
+    return {
+      status: res.status,
+      body,
+      contentType: res.headers.get("content-type") ?? "application/json",
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Forwards an arbitrary upstream API path (plus its query string) to the
- * content source, injecting the bearer token. Any path the source supports
- * works without code changes here.
+ * content source. The open mirror is tried first; the token-based source is
+ * used as an instant fallback. Any path either source supports works here.
  */
 export async function upstreamApi(path: string, search: string): Promise<UpstreamResult> {
   const clean = path.replace(/^\/+/, "");
   const url = `${API_PREFIX}/${clean}${search ?? ""}`;
 
+  const primary = await tryPrimary(clean, search);
+  if (primary) return primary;
+
   const call = async (token: string | null) =>
     fetch(url, {
       method: "GET",
       headers: {
-        Accept: "application/json",
+        ...BROWSER_HEADERS,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        "User-Agent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36",
         Referer: `${UPSTREAM_ORIGIN}/`,
       },
     });
@@ -96,6 +134,7 @@ export async function upstreamApi(path: string, search: string): Promise<Upstrea
     };
   }
 }
+
 
 /** Convenience wrapper returning parsed JSON for server-side callers. */
 export async function upstreamJson<T>(path: string, search = ""): Promise<T | null> {
