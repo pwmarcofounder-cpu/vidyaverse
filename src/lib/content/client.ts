@@ -3,7 +3,7 @@
  * never to the upstream host directly.
  */
 
-export const SOURCE_ORIGIN = "https://vid-stream-marco.vercel.app";
+
 
 export class ContentError extends Error {
   status: number;
@@ -139,11 +139,13 @@ export const topicsQuery = (batchSlug: string, subjectSlug: string) => ({
   staleTime: 5 * 60 * 1000,
 });
 
+export type ContentType = "videos" | "notes" | "DppNotes" | "DppVideos";
+
 export const contentsQuery = (
   batchSlug: string,
   subjectSlug: string,
   topicId: string,
-  contentType: "videos" | "notes" | "DppNotes",
+  contentType: ContentType,
   page = 1,
 ) => ({
   queryKey: ["contents", batchSlug, subjectSlug, topicId, contentType, page],
@@ -156,6 +158,51 @@ export const contentsQuery = (
   staleTime: 2 * 60 * 1000,
 });
 
+export type DppTest = {
+  test?: {
+    _id?: string;
+    name?: string;
+    totalMarks?: number;
+    totalQuestions?: number;
+    maxDuration?: number;
+  };
+  scheduleId?: string;
+  contentId?: string;
+  isFree?: boolean;
+  tag?: string;
+};
+
+export const dppTestsQuery = (
+  batchId: string,
+  batchSubjectId: string,
+  chapterId: string,
+  page = 1,
+) => ({
+  queryKey: ["dpp-tests", batchId, batchSubjectId, chapterId, page],
+  queryFn: () =>
+    contentGet<DppTest[]>(`v3/test-service/tests/dpp`, {
+      batchId,
+      batchSubjectId,
+      chapterId,
+      isSubjective: "false",
+      page,
+    }),
+  staleTime: 5 * 60 * 1000,
+});
+
+export type ScheduleItem = ContentItem & {
+  batchSubjectId?: string;
+  subjectId?: string;
+  endTime?: string;
+  status?: string;
+};
+
+export const todaysScheduleQuery = (batchId: string) => ({
+  queryKey: ["todays-schedule", batchId],
+  queryFn: () => contentGet<ScheduleItem[]>(`v2/batches/${batchId}/todays-schedule`),
+  staleTime: 60 * 1000,
+});
+
 export const scheduleDetailsQuery = (batchSlug: string, subjectSlug: string, scheduleId: string) => ({
   queryKey: ["schedule-details", batchSlug, subjectSlug, scheduleId],
   queryFn: () =>
@@ -164,6 +211,7 @@ export const scheduleDetailsQuery = (batchSlug: string, subjectSlug: string, sch
     ),
   staleTime: 5 * 60 * 1000,
 });
+
 
 /** Resolves an attachment to its absolute file URL, or null when the source has none. */
 export function attachmentUrl(a: Attachment | undefined | null): string | null {
@@ -175,42 +223,22 @@ export function attachmentUrl(a: Attachment | undefined | null): string | null {
 
 /* ------------------------------------------------------------- playback */
 
+export const PLAYER_ORIGIN = "https://pwplayer.pages.dev";
+
 /**
- * Rebuilds the source's own playback URL, preserving every parameter the
- * source data provides. The media stream itself is never touched.
- *
- * `subjectId` MUST be the batch-subject id (subject._id from batch details),
- * not the subject slug — the source player rejects the slug.
+ * Builds the player URL for a lecture / DPP video.
+ * child_id is the content (video) id from the source data.
  */
 export function buildPlayUrl(input: {
   batchId: string;
-  programId?: string | undefined;
   subjectId: string;
-  topicId: string;
-  item: ContentItem;
-  playType?: "Lecture" | "solutions";
+  childId: string;
 }) {
-  const { batchId, subjectId, topicId, item } = input;
-  const urlType = (item.urlType ?? "").toLowerCase();
-  const isYoutube = urlType === "youtube";
-
-  const typeId = item.videoDetails?._id ?? item.videoDetails?.id ?? "";
-  const videoUrl = isYoutube
-    ? (item.url ?? item.videoDetails?.embedCode ?? "")
-    : (item.videoDetails?.videoUrl ?? item.videoDetails?.hls_url ?? item.url ?? "");
-
-  const params = new URLSearchParams();
-  params.set("batch_id", batchId);
-  // program_id is preserved even when the source has it empty.
-  params.set("program_id", input.programId ?? "");
-  params.set("subject_id", subjectId);
-  params.set("topic_id", topicId);
-  params.set("video_id", item._id);
-  params.set("typeId", typeId);
-  params.set("video_url", videoUrl);
-  params.set("video_name", item.topic ?? item.videoDetails?.name ?? "");
-  params.set("video_img", item.videoDetails?.image ?? "");
-  params.set("video_type", isYoutube ? "youtube" : "new");
-  params.set("play_type", input.playType ?? "Lecture");
-  return `${SOURCE_ORIGIN}/play.php?${params.toString()}`;
+  const params = new URLSearchParams({
+    batch_id: input.batchId,
+    subject_id: input.subjectId,
+    child_id: input.childId,
+  });
+  return `${PLAYER_ORIGIN}/?${params.toString()}`;
 }
+

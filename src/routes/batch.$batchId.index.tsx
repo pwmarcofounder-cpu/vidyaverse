@@ -1,9 +1,64 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, ChevronRight, Clock } from "lucide-react";
+import { BookOpen, ChevronRight, Clock, PlayCircle } from "lucide-react";
 
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/apex/states";
-import { batchDetailsQuery, imageUrl } from "@/lib/content/client";
+import {
+  batchDetailsQuery,
+  buildPlayUrl,
+  imageUrl,
+  todaysScheduleQuery,
+  type ScheduleItem,
+} from "@/lib/content/client";
+
+function TodaysClasses({ batchId, fallbackSubjectId }: { batchId: string; fallbackSubjectId: string }) {
+  const schedule = useQuery(todaysScheduleQuery(batchId));
+  const items: ScheduleItem[] = schedule.data ?? [];
+
+  return (
+    <section className="mt-6">
+      <h2 className="text-lg font-bold">Today&apos;s classes</h2>
+      {schedule.isPending ? (
+        <div className="mt-3 h-16 animate-pulse rounded-2xl bg-muted" />
+      ) : items.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">No class scheduled for today.</p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {items.map((item) => {
+            const subjectId = item.batchSubjectId ?? item.subjectId ?? fallbackSubjectId;
+            const href = buildPlayUrl({ batchId, subjectId, childId: item._id });
+            const when = item.startTime
+              ? item.startTime
+              : item.date
+                ? new Date(item.date).toLocaleString()
+                : "";
+            return (
+              <a
+                key={item._id}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:border-accent"
+              >
+                <PlayCircle className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold">
+                    {item.topic ?? item.videoDetails?.name ?? "Live class"}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {[when, item.lectureType].filter(Boolean).join(" · ") || "Tap to open"}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 
 export const Route = createFileRoute("/batch/$batchId/")({
   head: () => ({
@@ -81,7 +136,10 @@ function BatchPage() {
             </div>
           </div>
 
+          <TodaysClasses batchId={batchId} fallbackSubjectId={batch.subjects?.[0]?._id ?? ""} />
+
           <h2 className="mt-6 text-lg font-bold">Subjects</h2>
+
           {batch.subjects && batch.subjects.length > 0 ? (
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {batch.subjects.map((s) => (
