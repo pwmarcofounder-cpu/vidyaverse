@@ -139,11 +139,13 @@ export const topicsQuery = (batchSlug: string, subjectSlug: string) => ({
   staleTime: 5 * 60 * 1000,
 });
 
+export type ContentType = "videos" | "notes" | "DppNotes" | "DppVideos";
+
 export const contentsQuery = (
   batchSlug: string,
   subjectSlug: string,
   topicId: string,
-  contentType: "videos" | "notes" | "DppNotes",
+  contentType: ContentType,
   page = 1,
 ) => ({
   queryKey: ["contents", batchSlug, subjectSlug, topicId, contentType, page],
@@ -156,6 +158,51 @@ export const contentsQuery = (
   staleTime: 2 * 60 * 1000,
 });
 
+export type DppTest = {
+  test?: {
+    _id?: string;
+    name?: string;
+    totalMarks?: number;
+    totalQuestions?: number;
+    maxDuration?: number;
+  };
+  scheduleId?: string;
+  contentId?: string;
+  isFree?: boolean;
+  tag?: string;
+};
+
+export const dppTestsQuery = (
+  batchId: string,
+  batchSubjectId: string,
+  chapterId: string,
+  page = 1,
+) => ({
+  queryKey: ["dpp-tests", batchId, batchSubjectId, chapterId, page],
+  queryFn: () =>
+    contentGet<DppTest[]>(`v3/test-service/tests/dpp`, {
+      batchId,
+      batchSubjectId,
+      chapterId,
+      isSubjective: "false",
+      page,
+    }),
+  staleTime: 5 * 60 * 1000,
+});
+
+export type ScheduleItem = ContentItem & {
+  batchSubjectId?: string;
+  subjectId?: string;
+  endTime?: string;
+  status?: string;
+};
+
+export const todaysScheduleQuery = (batchId: string) => ({
+  queryKey: ["todays-schedule", batchId],
+  queryFn: () => contentGet<ScheduleItem[]>(`v2/batches/${batchId}/todays-schedule`),
+  staleTime: 60 * 1000,
+});
+
 export const scheduleDetailsQuery = (batchSlug: string, subjectSlug: string, scheduleId: string) => ({
   queryKey: ["schedule-details", batchSlug, subjectSlug, scheduleId],
   queryFn: () =>
@@ -164,6 +211,7 @@ export const scheduleDetailsQuery = (batchSlug: string, subjectSlug: string, sch
     ),
   staleTime: 5 * 60 * 1000,
 });
+
 
 /** Resolves an attachment to its absolute file URL, or null when the source has none. */
 export function attachmentUrl(a: Attachment | undefined | null): string | null {
