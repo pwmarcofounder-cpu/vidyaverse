@@ -3,7 +3,7 @@
  * never to the upstream host directly.
  */
 
-export const SOURCE_ORIGIN = "https://vid-stream-marco.vercel.app";
+
 
 export class ContentError extends Error {
   status: number;
