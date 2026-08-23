@@ -136,7 +136,10 @@ function BatchPage() {
             </div>
           </div>
 
+          <TodaysClasses batchId={batchId} fallbackSubjectId={batch.subjects?.[0]?._id ?? ""} />
+
           <h2 className="mt-6 text-lg font-bold">Subjects</h2>
+
           {batch.subjects && batch.subjects.length > 0 ? (
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {batch.subjects.map((s) => (
