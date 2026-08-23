@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, PlayCircle } from "lucide-react";
+import { ClipboardList, FileText, PlayCircle } from "lucide-react";
 import { useState } from "react";
 
 import { RowSkeleton, EmptyState, ErrorState } from "@/components/apex/states";
@@ -9,18 +9,22 @@ import {
   batchDetailsQuery,
   buildPlayUrl,
   contentsQuery,
+  dppTestsQuery,
   scheduleDetailsQuery,
   type ContentItem,
+  type ContentType,
   type Homework,
 } from "@/lib/content/client";
 
 type TopicSearch = { title?: string | undefined; subject?: string | undefined };
-type Tab = "videos" | "notes" | "DppNotes";
+type Tab = ContentType | "DppTests";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "videos", label: "Lectures" },
   { key: "notes", label: "Notes" },
-  { key: "DppNotes", label: "DPP" },
+  { key: "DppNotes", label: "DPP PDF" },
+  { key: "DppVideos", label: "DPP Videos" },
+  { key: "DppTests", label: "DPP Tests" },
 ];
 
 export const Route = createFileRoute("/batch/$batchId/$subjectSlug/$topicId")({
@@ -46,19 +50,26 @@ function TopicPage() {
 
   const details = useQuery(batchDetailsQuery(batchId));
   const batchSlug = details.data?.slug;
-  const programId = details.data?.programId ?? "";
   // The player needs the batch-subject id, not the slug used for routing.
-  const subjectId =
-    details.data?.subjects?.find((s) => s.slug === subjectSlug)?._id ?? "";
+  const subjectId = details.data?.subjects?.find((s) => s.slug === subjectSlug)?._id ?? "";
+
+  const isTests = tab === "DppTests";
 
   const contents = useQuery({
-    ...contentsQuery(batchSlug ?? "", subjectSlug, topicId, tab),
-    enabled: Boolean(batchSlug),
+    ...contentsQuery(batchSlug ?? "", subjectSlug, topicId, (isTests ? "videos" : tab) as ContentType),
+    enabled: Boolean(batchSlug) && !isTests,
   });
 
-  const isLoading = details.isPending || contents.isPending;
-  const error = details.error ?? contents.error;
+  const tests = useQuery({
+    ...dppTestsQuery(batchId, subjectId, topicId),
+    enabled: isTests && Boolean(subjectId),
+  });
+
+  const isLoading = details.isPending || (isTests ? tests.isPending : contents.isPending);
+  const error = details.error ?? (isTests ? tests.error : contents.error);
   const items = contents.data ?? [];
+  const testItems = tests.data ?? [];
+  const isEmpty = isTests ? testItems.length === 0 : items.length === 0;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
@@ -78,7 +89,7 @@ function TopicPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
               tab === t.key
                 ? "bg-primary text-primary-foreground"
                 : "border border-border bg-card text-muted-foreground"
@@ -94,33 +105,52 @@ function TopicPage() {
         {error ? (
           <ErrorState
             message={(error as Error).message || "Couldn't load this topic."}
-            onRetry={() => contents.refetch()}
+            onRetry={() => (isTests ? tests.refetch() : contents.refetch())}
           />
         ) : null}
-        {!isLoading && !error && items.length === 0 ? (
+        {!isLoading && !error && isEmpty ? (
           <EmptyState message="Nothing published in this section yet." />
         ) : null}
 
         <div className="space-y-2">
-          {items.map((item) =>
-            tab === "videos" ? (
-              <VideoRow
-                key={item._id}
-                item={item}
-                batchId={batchId}
-                programId={programId}
-                subjectId={subjectId}
-                topicId={topicId}
-              />
-            ) : (
-              <NotesRow
-                key={item._id}
-                item={item}
-                batchSlug={batchSlug ?? ""}
-                subjectSlug={subjectSlug}
-              />
-            ),
-          )}
+          {isTests
+            ? testItems.map((t) => (
+                <div
+                  key={t.test?._id ?? t.contentId}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
+                >
+                  <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">{t.test?.name ?? "DPP Test"}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {[
+                        t.test?.totalQuestions ? `${t.test.totalQuestions} questions` : null,
+                        t.test?.totalMarks ? `${t.test.totalMarks} marks` : null,
+                        t.test?.maxDuration ? `${t.test.maxDuration} min` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
+                </div>
+              ))
+            : items.map((item) =>
+                tab === "videos" || tab === "DppVideos" ? (
+                  <VideoRow
+                    key={item._id}
+                    item={item}
+                    batchId={batchId}
+                    subjectId={subjectId}
+                  />
+                ) : (
+                  <NotesRow
+                    key={item._id}
+                    item={item}
+                    batchSlug={batchSlug ?? ""}
+                    subjectSlug={subjectSlug}
+                  />
+                ),
+              )}
         </div>
       </div>
     </div>
@@ -130,17 +160,13 @@ function TopicPage() {
 function VideoRow({
   item,
   batchId,
-  programId,
   subjectId,
-  topicId,
 }: {
   item: ContentItem;
   batchId: string;
-  programId: string;
   subjectId: string;
-  topicId: string;
 }) {
-  const href = buildPlayUrl({ batchId, programId, subjectId, topicId, item });
+  const href = buildPlayUrl({ batchId, subjectId, childId: item._id });
   const thumb = item.videoDetails?.image;
   return (
     <a
