@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
-export const LOGO_URL = "https://i.ibb.co/PZThbjmf/1000002876-removebg-preview-2.png";
-export const TELEGRAM_URL = "https://t.me/official_marco_22";
+export const LOGO_URL = "https://i.ibb.co/B51HMGdJ/IMG-20260825-191829-873.jpg";
+export const TELEGRAM_URL = "https://t.me/vidya_verse";
 
 export function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
@@ -9,7 +9,7 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
       <img
         src={LOGO_URL}
         alt="VidyaVerse logo"
-        className={compact ? "h-8 w-8 object-contain" : "h-10 w-10 object-contain"}
+        className={compact ? "h-8 w-8 rounded-lg object-cover" : "h-10 w-10 rounded-xl object-cover"}
         width={40}
         height={40}
       />
@@ -18,7 +18,7 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
           VidyaVerse
         </span>
         <span className="block text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Powered by MARCO
+          Learn. Practice. Excel.
         </span>
       </span>
     </Link>
