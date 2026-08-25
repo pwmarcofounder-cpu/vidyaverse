@@ -11,7 +11,50 @@ import {
   type ScheduleItem,
 } from "@/lib/content/client";
 
-function TodaysClasses({ batchId, fallbackSubjectId }: { batchId: string; fallbackSubjectId: string }) {
+type ClassStatus = "live" | "upcoming" | "ended";
+
+function parseAt(date?: string, time?: string): number | null {
+  if (!date) return null;
+  const day = new Date(date);
+  if (Number.isNaN(day.getTime())) return null;
+  if (time && /^\d{1,2}:\d{2}/.test(time)) {
+    const [h, m] = time.split(":");
+    day.setHours(Number(h), Number(m), 0, 0);
+  }
+  return day.getTime();
+}
+
+function classStatus(item: ScheduleItem): ClassStatus {
+  const raw = (item.status ?? "").toLowerCase();
+  if (raw.includes("live") || raw.includes("start")) return "live";
+  if (raw.includes("end") || raw.includes("complet")) return "ended";
+  if (raw.includes("upcoming") || raw.includes("todo")) return "upcoming";
+
+  const now = Date.now();
+  const start = parseAt(item.date, item.startTime);
+  const end = parseAt(item.date, item.endTime);
+  if (start && now < start) return "upcoming";
+  if (end && now > end) return "ended";
+  if (start && !end) return now - start < 3 * 60 * 60 * 1000 ? "live" : "ended";
+  if (start && end) return "live";
+  return "upcoming";
+}
+
+const STATUS_META: Record<ClassStatus, { label: string; className: string }> = {
+  live: { label: "Live", className: "bg-destructive text-destructive-foreground" },
+  upcoming: { label: "Upcoming", className: "bg-primary text-primary-foreground" },
+  ended: { label: "Ended", className: "bg-secondary text-secondary-foreground" },
+};
+
+function TodaysClasses({
+  batchId,
+  fallbackSubjectId,
+  fallbackImage,
+}: {
+  batchId: string;
+  fallbackSubjectId: string;
+  fallbackImage?: string | null;
+}) {
   const schedule = useQuery(todaysScheduleQuery(batchId));
   const items: ScheduleItem[] = schedule.data ?? [];
 
@@ -19,16 +62,24 @@ function TodaysClasses({ batchId, fallbackSubjectId }: { batchId: string; fallba
     <section className="mt-6">
       <h2 className="text-lg font-bold">Today&apos;s classes</h2>
       {schedule.isPending ? (
-        <div className="mt-3 h-16 animate-pulse rounded-2xl bg-muted" />
+        <div className="mt-3 flex gap-3 overflow-hidden">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-48 w-64 shrink-0 animate-pulse rounded-2xl bg-muted" />
+          ))}
+        </div>
       ) : items.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">No class scheduled for today.</p>
       ) : (
-        <div className="mt-3 space-y-2">
+        <div className="-mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
           {items.map((item) => {
             const subjectId = item.batchSubjectId ?? item.subjectId ?? fallbackSubjectId;
             const href = buildPlayUrl({ batchId, subjectId, childId: item._id });
+            const status = classStatus(item);
+            const meta = STATUS_META[status];
+            const banner = item.videoDetails?.image ?? fallbackImage ?? null;
+            const title = item.topic ?? item.videoDetails?.name ?? "Live class";
             const when = item.startTime
-              ? item.startTime
+              ? [item.startTime, item.endTime].filter(Boolean).join(" – ")
               : item.date
                 ? new Date(item.date).toLocaleString()
                 : "";
@@ -38,18 +89,39 @@ function TodaysClasses({ batchId, fallbackSubjectId }: { batchId: string; fallba
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:border-accent"
+                className="group w-64 shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-accent"
               >
-                <PlayCircle className="h-5 w-5 shrink-0 text-primary" aria-hidden />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">
-                    {item.topic ?? item.videoDetails?.name ?? "Live class"}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">
-                    {[when, item.lectureType].filter(Boolean).join(" · ") || "Tap to open"}
+                <span className="relative block aspect-video w-full overflow-hidden bg-secondary">
+                  {banner ? (
+                    <img
+                      src={banner}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center">
+                      <PlayCircle className="h-8 w-8 text-muted-foreground" aria-hidden />
+                    </span>
+                  )}
+                  <span
+                    className={`absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${meta.className}`}
+                  >
+                    {status === "live" ? (
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+                    ) : null}
+                    {meta.label}
                   </span>
                 </span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                <span className="block p-3">
+                  <span className="line-clamp-2 block text-sm font-semibold">{title}</span>
+                  <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span className="truncate">
+                      {[when, item.lectureType].filter(Boolean).join(" · ") || "Tap to open"}
+                    </span>
+                  </span>
+                </span>
               </a>
             );
           })}
@@ -58,6 +130,7 @@ function TodaysClasses({ batchId, fallbackSubjectId }: { batchId: string; fallba
     </section>
   );
 }
+
 
 
 export const Route = createFileRoute("/batch/$batchId/")({
@@ -136,7 +209,11 @@ function BatchPage() {
             </div>
           </div>
 
-          <TodaysClasses batchId={batchId} fallbackSubjectId={batch.subjects?.[0]?._id ?? ""} />
+          <TodaysClasses
+            batchId={batchId}
+            fallbackSubjectId={batch.subjects?.[0]?._id ?? ""}
+            fallbackImage={cover}
+          />
 
           <h2 className="mt-6 text-lg font-bold">Subjects</h2>
 
