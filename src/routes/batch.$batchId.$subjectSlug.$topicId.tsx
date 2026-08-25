@@ -7,7 +7,7 @@ import { RowSkeleton, EmptyState, ErrorState } from "@/components/apex/states";
 import {
   attachmentUrl,
   batchDetailsQuery,
-  buildPlayUrl,
+  buildWatchPath,
   contentsQuery,
   dppTestsQuery,
   scheduleDetailsQuery,
@@ -166,13 +166,13 @@ function VideoRow({
   batchId: string;
   subjectId: string;
 }) {
-  const href = buildPlayUrl({ batchId, subjectId, childId: item._id });
+  const title = item.topic ?? item.videoDetails?.name ?? "Lecture";
+  const href = buildWatchPath({ batchId, subjectId, scheduleId: item._id }) +
+    `&title=${encodeURIComponent(title)}`;
   const thumb = item.videoDetails?.image;
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
       className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-accent"
     >
       <span className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -186,7 +186,7 @@ function VideoRow({
       </span>
       <span className="min-w-0 flex-1">
         <span className="line-clamp-2 text-sm font-semibold">
-          {item.topic ?? item.videoDetails?.name ?? "Lecture"}
+          {title}
         </span>
         <span className="mt-0.5 block text-xs text-muted-foreground">
           {[item.videoDetails?.duration, item.date ? new Date(item.date).toLocaleDateString() : null]
