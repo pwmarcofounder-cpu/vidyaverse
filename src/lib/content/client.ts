@@ -191,17 +191,39 @@ export const dppTestsQuery = (
 });
 
 export type ScheduleItem = ContentItem & {
-  batchSubjectId?: string;
-  subjectId?: string;
-  endTime?: string;
-  status?: string;
+  batchSubjectId?: string | undefined;
+  subjectId?: string | undefined;
+  endTime?: string | undefined;
+  status?: string | undefined;
+  tag?: string | undefined;
+  type?: string | undefined;
+  isVideoLecture?: boolean | undefined;
 };
+
+
+type RawScheduleItem = { type?: string; _id?: string; data?: Record<string, unknown> };
+
+/** Today's schedule ships items wrapped as { type, data }; flatten to a usable shape. */
+function normalizeSchedule(raw: RawScheduleItem[] | null | undefined): ScheduleItem[] {
+  return (raw ?? []).map((entry) => {
+    const d = (entry.data ?? {}) as Record<string, unknown>;
+    const subject = d["subjectId"] as { _id?: string } | string | undefined;
+    return {
+      ...(d as unknown as ScheduleItem),
+      _id: (d["_id"] as string) ?? entry._id ?? "",
+      type: entry.type,
+      subjectId: typeof subject === "string" ? subject : subject?._id,
+    };
+  });
+}
 
 export const todaysScheduleQuery = (batchId: string) => ({
   queryKey: ["todays-schedule", batchId],
-  queryFn: () => contentGet<ScheduleItem[]>(`v2/batches/${batchId}/todays-schedule`),
+  queryFn: async () =>
+    normalizeSchedule(await contentGet<RawScheduleItem[]>(`v2/batches/${batchId}/todays-schedule`)),
   staleTime: 60 * 1000,
 });
+
 
 export const scheduleDetailsQuery = (batchSlug: string, subjectSlug: string, scheduleId: string) => ({
   queryKey: ["schedule-details", batchSlug, subjectSlug, scheduleId],
@@ -223,22 +245,47 @@ export function attachmentUrl(a: Attachment | undefined | null): string | null {
 
 /* ------------------------------------------------------------- playback */
 
-export const PLAYER_ORIGIN = "https://pwplayer.pages.dev";
+export const STREAM_API = "https://pw-stream.pages.dev/api/video-url";
+export const PLAYER_ORIGIN = "https://pw-player2.ai.studio";
 
-/**
- * Builds the player URL for a lecture / DPP video.
- * child_id is the content (video) id from the source data.
- */
-export function buildPlayUrl(input: {
+/** In-app watch page path for a lecture / DPP video. */
+export function buildWatchPath(input: { batchId: string; subjectId: string; scheduleId: string }) {
+  const params = new URLSearchParams({
+    batchId: input.batchId,
+    subjectId: input.subjectId,
+    scheduleId: input.scheduleId,
+  });
+  return `/watch?${params.toString()}`;
+}
+
+/** Resolves the HLS (m3u8) stream URL for a schedule item. */
+export async function fetchStreamUrl(input: {
   batchId: string;
   subjectId: string;
-  childId: string;
-}) {
-  const params = new URLSearchParams({
-    batch_id: input.batchId,
-    subject_id: input.subjectId,
-    child_id: input.childId,
+  scheduleId: string;
+}): Promise<string> {
+  const params = new URLSearchParams(input as unknown as Record<string, string>);
+  const res = await fetch(`${STREAM_API}?${params.toString()}`, {
+    headers: { Accept: "application/json" },
   });
-  return `${PLAYER_ORIGIN}/?${params.toString()}`;
+  const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  const hls =
+    (json?.["HLS_STREAM_URL"] as string | undefined) ??
+    (json?.["hls_url"] as string | undefined) ??
+    null;
+  if (!hls) throw new ContentError("Stream isn't available for this lecture yet.", res.status || 502);
+  return hls;
 }
+
+export const streamUrlQuery = (input: { batchId: string; subjectId: string; scheduleId: string }) => ({
+  queryKey: ["stream-url", input.batchId, input.subjectId, input.scheduleId],
+  queryFn: () => fetchStreamUrl(input),
+  staleTime: 60 * 1000,
+  retry: 1,
+});
+
+export function buildPlayerEmbedUrl(m3u8: string) {
+  return `${PLAYER_ORIGIN}/?url=${encodeURIComponent(m3u8)}`;
+}
+
 

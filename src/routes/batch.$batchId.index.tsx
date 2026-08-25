@@ -5,7 +5,7 @@ import { BookOpen, ChevronRight, Clock, PlayCircle } from "lucide-react";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/apex/states";
 import {
   batchDetailsQuery,
-  buildPlayUrl,
+  buildWatchPath,
   imageUrl,
   todaysScheduleQuery,
   type ScheduleItem,
@@ -13,31 +13,20 @@ import {
 
 type ClassStatus = "live" | "upcoming" | "ended";
 
-function parseAt(date?: string, time?: string): number | null {
-  if (!date) return null;
-  const day = new Date(date);
-  if (Number.isNaN(day.getTime())) return null;
-  if (time && /^\d{1,2}:\d{2}/.test(time)) {
-    const [h, m] = time.split(":");
-    day.setHours(Number(h), Number(m), 0, 0);
-  }
-  return day.getTime();
-}
-
-function classStatus(item: ScheduleItem): ClassStatus {
-  const raw = (item.status ?? "").toLowerCase();
-  if (raw.includes("live") || raw.includes("start")) return "live";
-  if (raw.includes("end") || raw.includes("complet")) return "ended";
-  if (raw.includes("upcoming") || raw.includes("todo")) return "upcoming";
+/** Status comes straight from the source (`tag` / `status`); never guessed. */
+function classStatus(item: ScheduleItem): ClassStatus | null {
+  const raw = `${item.tag ?? ""} ${item.status ?? ""}`.toLowerCase();
+  if (raw.includes("end") || raw.includes("complet") || raw.includes("expired")) return "ended";
+  if (raw.includes("live") || raw.includes("ongoing") || raw.includes("started")) return "live";
+  if (raw.includes("upcoming") || raw.includes("todo") || raw.includes("scheduled")) return "upcoming";
 
   const now = Date.now();
-  const start = parseAt(item.date, item.startTime);
-  const end = parseAt(item.date, item.endTime);
-  if (start && now < start) return "upcoming";
-  if (end && now > end) return "ended";
-  if (start && !end) return now - start < 3 * 60 * 60 * 1000 ? "live" : "ended";
-  if (start && end) return "live";
-  return "upcoming";
+  const start = item.startTime ? new Date(item.startTime).getTime() : NaN;
+  const end = item.endTime ? new Date(item.endTime).getTime() : NaN;
+  if (!Number.isNaN(end) && now > end) return "ended";
+  if (!Number.isNaN(start) && now < start) return "upcoming";
+  if (!Number.isNaN(start) && !Number.isNaN(end)) return "live";
+  return null;
 }
 
 const STATUS_META: Record<ClassStatus, { label: string; className: string }> = {
@@ -46,14 +35,20 @@ const STATUS_META: Record<ClassStatus, { label: string; className: string }> = {
   ended: { label: "Ended", className: "bg-secondary text-secondary-foreground" },
 };
 
+function timeLabel(item: ScheduleItem): string {
+  const fmt = (v?: string) =>
+    v && !Number.isNaN(new Date(v).getTime())
+      ? new Date(v).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : null;
+  return [fmt(item.startTime), fmt(item.endTime)].filter(Boolean).join(" – ");
+}
+
 function TodaysClasses({
   batchId,
   fallbackSubjectId,
-  fallbackImage,
 }: {
   batchId: string;
   fallbackSubjectId: string;
-  fallbackImage?: string | null;
 }) {
   const schedule = useQuery(todaysScheduleQuery(batchId));
   const items: ScheduleItem[] = schedule.data ?? [];
@@ -73,22 +68,19 @@ function TodaysClasses({
         <div className="-mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
           {items.map((item) => {
             const subjectId = item.batchSubjectId ?? item.subjectId ?? fallbackSubjectId;
-            const href = buildPlayUrl({ batchId, subjectId, childId: item._id });
             const status = classStatus(item);
-            const meta = STATUS_META[status];
-            const banner = item.videoDetails?.image ?? fallbackImage ?? null;
-            const title = item.topic ?? item.videoDetails?.name ?? "Live class";
-            const when = item.startTime
-              ? [item.startTime, item.endTime].filter(Boolean).join(" – ")
-              : item.date
-                ? new Date(item.date).toLocaleString()
-                : "";
+            const meta = status ? STATUS_META[status] : null;
+            // Only the source's own banner — no batch-cover stand-in.
+            const banner = item.videoDetails?.image ?? null;
+            const title = item.topic ?? item.videoDetails?.name ?? null;
+            const when = timeLabel(item);
+            const href =
+              buildWatchPath({ batchId, subjectId, scheduleId: item._id }) +
+              (title ? `&title=${encodeURIComponent(title)}` : "");
             return (
               <a
                 key={item._id}
                 href={href}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="group w-64 shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-accent"
               >
                 <span className="relative block aspect-video w-full overflow-hidden bg-secondary">
@@ -104,23 +96,29 @@ function TodaysClasses({
                       <PlayCircle className="h-8 w-8 text-muted-foreground" aria-hidden />
                     </span>
                   )}
-                  <span
-                    className={`absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${meta.className}`}
-                  >
-                    {status === "live" ? (
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
-                    ) : null}
-                    {meta.label}
-                  </span>
+                  {meta ? (
+                    <span
+                      className={`absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${meta.className}`}
+                    >
+                      {status === "live" ? (
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+                      ) : null}
+                      {meta.label}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="block p-3">
-                  <span className="line-clamp-2 block text-sm font-semibold">{title}</span>
-                  <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span className="truncate">
-                      {[when, item.lectureType].filter(Boolean).join(" · ") || "Tap to open"}
+                  {title ? (
+                    <span className="line-clamp-2 block text-sm font-semibold">{title}</span>
+                  ) : null}
+                  {when || item.lectureType ? (
+                    <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span className="truncate">
+                        {[when, item.lectureType].filter(Boolean).join(" · ")}
+                      </span>
                     </span>
-                  </span>
+                  ) : null}
                 </span>
               </a>
             );
@@ -130,6 +128,7 @@ function TodaysClasses({
     </section>
   );
 }
+
 
 
 
