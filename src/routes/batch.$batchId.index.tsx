@@ -211,7 +211,6 @@ function BatchPage() {
           <TodaysClasses
             batchId={batchId}
             fallbackSubjectId={batch.subjects?.[0]?._id ?? ""}
-            fallbackImage={cover}
           />
 
           <h2 className="mt-6 text-lg font-bold">Subjects</h2>
