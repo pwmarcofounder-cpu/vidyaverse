@@ -18,8 +18,8 @@ function parseAt(date?: string, time?: string): number | null {
   const day = new Date(date);
   if (Number.isNaN(day.getTime())) return null;
   if (time && /^\d{1,2}:\d{2}/.test(time)) {
-    const [h, m] = time.split(":").map(Number);
-    day.setHours(h, m, 0, 0);
+    const [h, m] = time.split(":");
+    day.setHours(Number(h), Number(m), 0, 0);
   }
   return day.getTime();
 }
