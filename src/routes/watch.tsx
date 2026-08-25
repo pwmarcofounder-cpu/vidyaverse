@@ -22,10 +22,10 @@ export const Route = createFileRoute("/watch")({
   }),
   head: () => ({
     meta: [
-      { title: "Watch Lecture — PW-MARCO" },
-      { name: "description", content: "Stream your PW-MARCO lecture in full screen." },
-      { property: "og:title", content: "Watch Lecture — PW-MARCO" },
-      { property: "og:description", content: "Stream your PW-MARCO lecture in full screen." },
+      { title: "Watch Lecture — VidyaVerse" },
+      { name: "description", content: "Stream your VidyaVerse lecture in full screen." },
+      { property: "og:title", content: "Watch Lecture — VidyaVerse" },
+      { property: "og:description", content: "Stream your VidyaVerse lecture in full screen." },
     ],
   }),
   component: WatchPage,

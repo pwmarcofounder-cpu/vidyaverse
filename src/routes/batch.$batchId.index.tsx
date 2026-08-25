@@ -135,12 +135,12 @@ function TodaysClasses({
 export const Route = createFileRoute("/batch/$batchId/")({
   head: () => ({
     meta: [
-      { title: "Batch — PW-MARCO" },
+      { title: "Batch — VidyaVerse" },
       {
         name: "description",
-        content: "Subjects, topics and lectures for this PW-MARCO batch.",
+        content: "Subjects, topics and lectures for this VidyaVerse batch.",
       },
-      { property: "og:title", content: "Batch — PW-MARCO" },
+      { property: "og:title", content: "Batch — VidyaVerse" },
       {
         property: "og:description",
         content: "Open subjects, topics and lectures for this batch.",

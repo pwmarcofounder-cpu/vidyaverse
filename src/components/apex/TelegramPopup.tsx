@@ -25,7 +25,7 @@ export function TelegramPopup() {
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-3 backdrop-blur-sm sm:items-center">
       <div
         role="dialog"
-        aria-label="Join PW-MARCO on Telegram"
+        aria-label="Join VidyaVerse on Telegram"
         className="relative w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center shadow-xl"
       >
         <button
@@ -37,12 +37,12 @@ export function TelegramPopup() {
         </button>
         <img
           src={LOGO_URL}
-          alt="PW-MARCO logo"
+          alt="VidyaVerse logo"
           className="mx-auto h-16 w-16 object-contain"
           width={64}
           height={64}
         />
-        <h2 className="mt-3 text-lg font-bold">Join PW-MARCO on Telegram</h2>
+        <h2 className="mt-3 text-lg font-bold">Join VidyaVerse on Telegram</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Get new batch drops, lecture updates and study alerts the moment they go live.
         </p>
