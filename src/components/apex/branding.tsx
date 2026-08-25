@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
-export const LOGO_URL = "https://i.ibb.co/B51HMGdJ/IMG-20260825-191829-873.jpg";
+import logoAsset from "@/assets/vidyaverse-logo.png.asset.json";
+
+export const LOGO_URL = logoAsset.url;
 export const TELEGRAM_URL = "https://t.me/vidya_verse";
 
 export function Wordmark({ compact = false }: { compact?: boolean }) {
@@ -9,10 +11,12 @@ export function Wordmark({ compact = false }: { compact?: boolean }) {
       <img
         src={LOGO_URL}
         alt="VidyaVerse logo"
-        className={compact ? "h-8 w-8 rounded-lg object-cover" : "h-10 w-10 rounded-xl object-cover"}
+        className={compact ? "h-8 w-8 object-contain" : "h-10 w-10 object-contain"}
         width={40}
         height={40}
+        decoding="async"
       />
+
       <span className="leading-none">
         <span className="block font-display text-base font-bold tracking-tight sm:text-lg">
           VidyaVerse
