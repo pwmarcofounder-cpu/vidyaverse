@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/content/$")({
           status: result.status,
           headers: {
             "content-type": result.contentType,
-            "cache-control": "public, max-age=60",
+            "cache-control": "public, max-age=60, stale-while-revalidate=600",
           },
         });
       },

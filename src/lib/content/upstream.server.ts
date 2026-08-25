@@ -25,6 +25,7 @@ async function requestToken(): Promise<string | null> {
         "User-Agent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36",
         Referer: `${UPSTREAM_ORIGIN}/`,
       },
+      signal: timeoutSignal(),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { success?: boolean; access_token?: string };
@@ -75,11 +76,24 @@ function looksHealthy(status: number, body: string) {
   }
 }
 
+/** Short-lived in-memory response cache — keeps repeat navigations instant. */
+const RESPONSE_TTL_MS = 90 * 1000;
+const responseCache = new Map<string, { at: number; value: UpstreamResult }>();
+const inflightRequests = new Map<string, Promise<UpstreamResult>>();
+
+/** Upstream can hang; never let a page wait longer than this. */
+const REQUEST_TIMEOUT_MS = 8000;
+
+function timeoutSignal() {
+  return AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+}
+
 async function tryPrimary(clean: string, search: string): Promise<UpstreamResult | null> {
   try {
     const res = await fetch(`${PRIMARY_PREFIX}/${clean}${search ?? ""}`, {
       method: "GET",
       headers: BROWSER_HEADERS,
+      signal: timeoutSignal(),
     });
     const body = await res.text();
     if (!looksHealthy(res.status, body)) return null;
@@ -99,6 +113,33 @@ async function tryPrimary(clean: string, search: string): Promise<UpstreamResult
  * used as an instant fallback. Any path either source supports works here.
  */
 export async function upstreamApi(path: string, search: string): Promise<UpstreamResult> {
+  const key = `${path}${search ?? ""}`;
+  const hit = responseCache.get(key);
+  if (hit && Date.now() - hit.at < RESPONSE_TTL_MS) return hit.value;
+
+  const existing = inflightRequests.get(key);
+  if (existing) return existing;
+
+  const request = fetchUpstream(path, search).then((value) => {
+    inflightRequests.delete(key);
+    if (value.status >= 200 && value.status < 300) {
+      responseCache.set(key, { at: Date.now(), value });
+      if (responseCache.size > 300) {
+        const oldest = responseCache.keys().next().value;
+        if (oldest) responseCache.delete(oldest);
+      }
+    }
+    return value;
+  }).catch((error) => {
+    inflightRequests.delete(key);
+    throw error;
+  });
+
+  inflightRequests.set(key, request);
+  return request;
+}
+
+async function fetchUpstream(path: string, search: string): Promise<UpstreamResult> {
   const clean = path.replace(/^\/+/, "");
   const url = `${API_PREFIX}/${clean}${search ?? ""}`;
 
@@ -113,6 +154,7 @@ export async function upstreamApi(path: string, search: string): Promise<Upstrea
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         Referer: `${UPSTREAM_ORIGIN}/`,
       },
+      signal: timeoutSignal(),
     });
 
   try {
