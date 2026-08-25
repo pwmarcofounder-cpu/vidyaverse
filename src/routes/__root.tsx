@@ -83,7 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "VidyaVerse — powered by MARCO — browse batches, subjects, topics and lectures on any device.",
+          "VidyaVerse — browse batches, subjects, topics and lectures on any device.",
       },
       { name: "author", content: "VidyaVerse" },
       { property: "og:title", content: "VidyaVerse — Lectures, Notes & Batches" },

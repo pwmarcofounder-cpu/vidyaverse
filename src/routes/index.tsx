@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "VidyaVerse, powered by MARCO. Browse batches, subjects, topics and stream lectures on any device.",
+          "VidyaVerse. Browse batches, subjects, topics and stream lectures on any device.",
       },
       { property: "og:title", content: "VidyaVerse — Free Lectures, Notes & Batches" },
       {
