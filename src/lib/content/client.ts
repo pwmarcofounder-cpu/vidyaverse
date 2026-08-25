@@ -191,14 +191,15 @@ export const dppTestsQuery = (
 });
 
 export type ScheduleItem = ContentItem & {
-  batchSubjectId?: string;
-  subjectId?: string;
-  endTime?: string;
-  status?: string;
-  tag?: string;
-  type?: string;
-  isVideoLecture?: boolean;
+  batchSubjectId?: string | undefined;
+  subjectId?: string | undefined;
+  endTime?: string | undefined;
+  status?: string | undefined;
+  tag?: string | undefined;
+  type?: string | undefined;
+  isVideoLecture?: boolean | undefined;
 };
+
 
 type RawScheduleItem = { type?: string; _id?: string; data?: Record<string, unknown> };
 
