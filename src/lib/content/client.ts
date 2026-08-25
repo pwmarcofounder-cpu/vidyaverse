@@ -195,13 +195,34 @@ export type ScheduleItem = ContentItem & {
   subjectId?: string;
   endTime?: string;
   status?: string;
+  tag?: string;
+  type?: string;
+  isVideoLecture?: boolean;
 };
+
+type RawScheduleItem = { type?: string; _id?: string; data?: Record<string, unknown> };
+
+/** Today's schedule ships items wrapped as { type, data }; flatten to a usable shape. */
+function normalizeSchedule(raw: RawScheduleItem[] | null | undefined): ScheduleItem[] {
+  return (raw ?? []).map((entry) => {
+    const d = (entry.data ?? {}) as Record<string, unknown>;
+    const subject = d["subjectId"] as { _id?: string } | string | undefined;
+    return {
+      ...(d as unknown as ScheduleItem),
+      _id: (d["_id"] as string) ?? entry._id ?? "",
+      type: entry.type,
+      subjectId: typeof subject === "string" ? subject : subject?._id,
+    };
+  });
+}
 
 export const todaysScheduleQuery = (batchId: string) => ({
   queryKey: ["todays-schedule", batchId],
-  queryFn: () => contentGet<ScheduleItem[]>(`v2/batches/${batchId}/todays-schedule`),
+  queryFn: async () =>
+    normalizeSchedule(await contentGet<RawScheduleItem[]>(`v2/batches/${batchId}/todays-schedule`)),
   staleTime: 60 * 1000,
 });
+
 
 export const scheduleDetailsQuery = (batchSlug: string, subjectSlug: string, scheduleId: string) => ({
   queryKey: ["schedule-details", batchSlug, subjectSlug, scheduleId],
